@@ -1,14 +1,23 @@
 (ns jikan.org-tools
   "The five org operations, driven from the REPL.  All real work happens
    in the Emacs daemon (elisp/jikan.el); this namespace resolves
-   area/project to paths, escapes arguments, and parses results."
+   area/project to paths, then delegates to the emacs port
+   (jikan.vendor.emacs)."
   (:require [clojure.data.json :as json]
+            [clojure.spec.alpha :as s]
             [jikan.config :as config]
-            [jikan.emacs :as emacs]))
+            [jikan.vendor.emacs.impl :as emacs-impl]
+            [jikan.vendor.emacs.intf :as emacs]))
+
+;; --- private helpers ---
 
 (def ^:private areas #{"work" "personal"})
 
-(defn resolve-path
+(s/fdef resolve-path
+  :args (s/cat :cfg ::config/config :area string? :project string?)
+  :ret string?)
+
+(defn- resolve-path
   "Resolve AREA + PROJECT to an org file path under :org-root.
    Throws on unknown area or on `/`/`..` in PROJECT (no path traversal)."
   [cfg area project]
@@ -23,44 +32,10 @@
                     {:project project})))
   (str (:org-root cfg) "/" area "/" project ".org"))
 
-(defn- rpc
-  "Evaluate (FN-NAME \"arg\" ...) in the daemon; return its result string."
-  [cfg fn-name & args]
-  (let [form (str "(" fn-name
-                  (apply str (map #(str " \"" (emacs/elisp-str %) "\"") args))
-                  ")")]
-    (emacs/eval! (:emacsclient cfg) form)))
-
-(defn ensure-file
-  "Create the area/project org file (and a * Tasks section) if missing."
-  [area project]
-  (let [cfg (config/load-config)]
-    (rpc cfg "jikan-ensure-file" (resolve-path cfg area project))))
-
-(defn add-todo
-  "Append \"** TODO HEADLINE\" under * Tasks in the area/project file."
-  [area project headline]
-  (let [cfg (config/load-config)]
-    (rpc cfg "jikan-add-todo" (resolve-path cfg area project) headline)))
-
-(defn mark-done
-  "Mark HEADLINE as DONE.  Throws unless exactly one entry matches."
-  [area project headline]
-  (let [cfg (config/load-config)]
-    (rpc cfg "jikan-mark-done" (resolve-path cfg area project) headline)))
-
-(defn clock-in
-  "Clock in on HEADLINE.  Throws unless exactly one entry matches."
-  [area project headline]
-  (let [cfg (config/load-config)]
-    (rpc cfg "jikan-clock-in" (resolve-path cfg area project) headline)))
-
-(defn clock-out
-  "Clock out of the running clock (any file).  Returns \"clocked-out\"
-   or \"no-clock\"."
-  []
-  (let [cfg (config/load-config)]
-    (rpc cfg "jikan-clock-out")))
+(defn- daemon
+  "The emacs port for CFG (a fresh emacsclient-backed adapter)."
+  [cfg]
+  (emacs-impl/make (:emacsclient cfg)))
 
 (defn- group-by-area-project
   "Flat [{:area :project :headline :state}] -> area -> project -> todos."
@@ -72,6 +47,39 @@
    {}
    entries))
 
+;; --- public API ---
+
+(defn ensure-file
+  "Create the area/project org file (and a * Tasks section) if missing."
+  [area project]
+  (let [cfg (config/load-config)]
+    (emacs/ensure-file (daemon cfg) (resolve-path cfg area project))))
+
+(defn add-todo
+  "Append \"** TODO HEADLINE\" under * Tasks in the area/project file."
+  [area project headline]
+  (let [cfg (config/load-config)]
+    (emacs/add-todo (daemon cfg) (resolve-path cfg area project) headline)))
+
+(defn mark-done
+  "Mark HEADLINE as DONE.  Throws unless exactly one entry matches."
+  [area project headline]
+  (let [cfg (config/load-config)]
+    (emacs/mark-done (daemon cfg) (resolve-path cfg area project) headline)))
+
+(defn clock-in
+  "Clock in on HEADLINE.  Throws unless exactly one entry matches."
+  [area project headline]
+  (let [cfg (config/load-config)]
+    (emacs/clock-in (daemon cfg) (resolve-path cfg area project) headline)))
+
+(defn clock-out
+  "Clock out of the running clock (any file).  Returns \"clocked-out\"
+   or \"no-clock\"."
+  []
+  (let [cfg (config/load-config)]
+    (emacs/clock-out (daemon cfg))))
+
 (defn list-todos
   "All TODO/DONE entries under <org-root>/{work,personal}/*.org, grouped
    area -> project -> [{:headline ... :state ...}]."
@@ -80,7 +88,7 @@
         tmp (java.io.File/createTempFile "jikan-todos" ".json")
         out-path (.getAbsolutePath tmp)]
     (try
-      (rpc cfg "jikan-list-todos" (:org-root cfg) out-path)
+      (emacs/list-todos (daemon cfg) (:org-root cfg) out-path)
       (-> (slurp out-path)
           (json/read-str :key-fn keyword)
           group-by-area-project)
