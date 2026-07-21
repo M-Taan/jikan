@@ -1,4 +1,4 @@
-(ns jikan.vendor.emacs.constants
+(ns jikan.vendor.emacs.impl.constants
   "Names of the elisp functions defined in elisp/jikan.el.  Kept here so
    callers reference a constant instead of a magic string, and so the
    Clojure/elisp contract lives in one place.")

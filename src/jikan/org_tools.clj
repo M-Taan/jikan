@@ -6,8 +6,7 @@
   (:require [clojure.data.json :as json]
             [clojure.spec.alpha :as s]
             [jikan.config :as config]
-            [jikan.vendor.emacs.impl :as emacs-impl]
-            [jikan.vendor.emacs.intf :as emacs]))
+            [jikan.vendor.emacs.intf.core :as emacs]))
 
 ;; --- private helpers ---
 
@@ -32,11 +31,6 @@
                     {:project project})))
   (str (:org-root cfg) "/" area "/" project ".org"))
 
-(defn- daemon
-  "The emacs port for CFG (a fresh emacsclient-backed adapter)."
-  [cfg]
-  (emacs-impl/make (:emacsclient cfg)))
-
 (defn- group-by-area-project
   "Flat [{:area :project :headline :state}] -> area -> project -> todos."
   [entries]
@@ -53,32 +47,32 @@
   "Create the area/project org file (and a * Tasks section) if missing."
   [area project]
   (let [cfg (config/load-config)]
-    (emacs/ensure-file (daemon cfg) (resolve-path cfg area project))))
+    (emacs/ensure-file (:emacsclient cfg) (resolve-path cfg area project))))
 
 (defn add-todo
   "Append \"** TODO HEADLINE\" under * Tasks in the area/project file."
   [area project headline]
   (let [cfg (config/load-config)]
-    (emacs/add-todo (daemon cfg) (resolve-path cfg area project) headline)))
+    (emacs/add-todo (:emacsclient cfg) (resolve-path cfg area project) headline)))
 
 (defn mark-done
   "Mark HEADLINE as DONE.  Throws unless exactly one entry matches."
   [area project headline]
   (let [cfg (config/load-config)]
-    (emacs/mark-done (daemon cfg) (resolve-path cfg area project) headline)))
+    (emacs/mark-done (:emacsclient cfg) (resolve-path cfg area project) headline)))
 
 (defn clock-in
   "Clock in on HEADLINE.  Throws unless exactly one entry matches."
   [area project headline]
   (let [cfg (config/load-config)]
-    (emacs/clock-in (daemon cfg) (resolve-path cfg area project) headline)))
+    (emacs/clock-in (:emacsclient cfg) (resolve-path cfg area project) headline)))
 
 (defn clock-out
   "Clock out of the running clock (any file).  Returns \"clocked-out\"
    or \"no-clock\"."
   []
   (let [cfg (config/load-config)]
-    (emacs/clock-out (daemon cfg))))
+    (emacs/clock-out (:emacsclient cfg))))
 
 (defn list-todos
   "All TODO/DONE entries under <org-root>/{work,personal}/*.org, grouped
@@ -88,7 +82,7 @@
         tmp (java.io.File/createTempFile "jikan-todos" ".json")
         out-path (.getAbsolutePath tmp)]
     (try
-      (emacs/list-todos (daemon cfg) (:org-root cfg) out-path)
+      (emacs/list-todos (:emacsclient cfg) (:org-root cfg) out-path)
       (-> (slurp out-path)
           (json/read-str :key-fn keyword)
           group-by-area-project)
