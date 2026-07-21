@@ -20,6 +20,11 @@ consistent when the architecture changes.
 - There is no test, lint, or build tooling (`deps.edn` has only the `:dev` alias). Don't hunt for
   a test runner — verify by calling the REPL wrappers and inspecting the resulting `.org` files.
 
+## Code Design
+- Any module that resembles a vendor, will be added to vendors with 2 directories impl/ and intf/
+- All implementation code code into impl, and exposed functions/constants are called inside impl/core.clj and then references by intf/core.clj
+- Don't have line comment, you can have docstrings and namespace docstring, but no inline comments. Keep docstring to only interfaces.
+
 ## Operational gotchas
 
 - Everything requires a running Emacs daemon reachable via `emacsclient`; without it every call
@@ -47,4 +52,4 @@ consistent when the architecture changes.
 - `.opencode/` is OpenCode's own config (the `/ship` command plus plugin `node_modules/`) and
   `.cpcache/` is Clojure's cache — neither is project code; exclude them from searches.
 - To commit/push/open a PR, use the `/ship` flow (`.opencode/command/ship.md`), which drives
-  `bin/ship.sh` — not raw git commands.
+  `bin/ship.sh` — not raw git commands. Don't co-author the commit message.

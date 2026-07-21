@@ -8,8 +8,6 @@
             [jikan.config :as config]
             [jikan.vendor.emacs.intf.core :as emacs]))
 
-;; --- private helpers ---
-
 (def ^:private areas #{"work" "personal"})
 
 (s/fdef resolve-path
@@ -40,8 +38,6 @@
                 {:headline headline :state state}))
    {}
    entries))
-
-;; --- public API ---
 
 (defn ensure-file
   "Create the area/project org file (and a * Tasks section) if missing."

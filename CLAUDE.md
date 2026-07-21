@@ -18,7 +18,12 @@ semantics in Clojure — every mutation happens in Emacs via `org-*` functions.
   actual `.org` files under `:org-root`.
 - No build/lint/test tooling is configured yet (no `clojure -X:test`, no linter alias in `deps.edn`).
 - `bin/ship.sh -t "<title>"` commits, pushes, and opens a PR (see `.claude/commands/ship.md` for the
-  `/ship` flow driving it).
+  `/ship` flow driving it). Don't co-author the commit message.
+
+## Code Design
+- Any module that resembles a vendor, will be added to vendors with 2 directories impl/ and intf/
+- All implementation code code into impl, and exposed functions/constants are called inside impl/core.clj and then references by intf/core.clj
+- Don't have line comment, you can have docstrings and namespace docstring, but no inline comments. Keep docstring to only interfaces.
 
 ## Architecture
 
