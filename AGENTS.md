@@ -53,3 +53,6 @@ consistent when the architecture changes.
   `.cpcache/` is Clojure's cache — neither is project code; exclude them from searches.
 - To commit/push/open a PR, use the `/ship` flow (`.opencode/command/ship.md`), which drives
   `bin/ship.sh` — not raw git commands. Don't co-author the commit message.
+
+## Rules
+- Always ship the code using the ship command when you're done.

@@ -54,3 +54,6 @@ daemon.
   headline to act on. Fuzzy matching of user phrasing belongs in a caller layer, not here.
 - Areas are hardcoded to `"work"` and `"personal"` (`jikan.org-tools/areas`); org files live at
   `<org-root>/<area>/<project>.org` under a top-level `* Tasks` heading.
+
+## Rules
+- Always ship the code using the ship command when you're done.
