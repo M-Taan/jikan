@@ -25,10 +25,17 @@
 (defn- object-schema [props required]
   {:type "object" :properties props :required required})
 
+(def ^:private tool-add-todo "add_todo")
+(def ^:private tool-mark-done "mark_done")
+(def ^:private tool-clock-in "clock_in")
+(def ^:private tool-clock-out "clock_out")
+(def ^:private tool-list-todos "list_todos")
+(def ^:private tool-ensure-file "ensure_file")
+
 (defn registry
   "Build the MCP tool registry for Jikan's org operations."
   []
-  {"add_todo"
+  {tool-add-todo
    {:description "Append a new TODO with HEADLINE under the area/project's org file."
     :input-schema (object-schema {:area area-schema
                                   :project project-schema
@@ -37,7 +44,7 @@
     :handler (fn [{:keys [area project headline]}]
                (tools/add-todo area project headline))}
 
-   "mark_done"
+   tool-mark-done
    {:description (str "Mark an existing headline DONE. Requires an exact, unique "
                      "match: call list_todos first to get the real headline text.")
     :input-schema (object-schema {:area area-schema
@@ -47,7 +54,7 @@
     :handler (fn [{:keys [area project headline]}]
                (tools/mark-done area project headline))}
 
-   "clock_in"
+   tool-clock-in
    {:description (str "Clock in on an existing headline. Requires an exact, unique "
                      "match: call list_todos first to get the real headline text.")
     :input-schema (object-schema {:area area-schema
@@ -57,19 +64,19 @@
     :handler (fn [{:keys [area project headline]}]
                (tools/clock-in area project headline))}
 
-   "clock_out"
+   tool-clock-out
    {:description "Clock out of the running clock. Returns clocked-out or no-clock."
     :input-schema (object-schema {} [])
     :handler (fn [_] (tools/clock-out))}
 
-   "list_todos"
+   tool-list-todos
    {:description (str "List every TODO/DONE grouped area -> project -> tasks, as "
                      "JSON. Read this to find exact headlines before mark_done or "
                      "clock_in.")
     :input-schema (object-schema {} [])
     :handler (fn [_] (json/write-str (tools/list-todos)))}
 
-   "ensure_file"
+   tool-ensure-file
    {:description "Create the area/project org file (with a * Tasks section) if missing."
     :input-schema (object-schema {:area area-schema :project project-schema}
                                  ["area" "project"])

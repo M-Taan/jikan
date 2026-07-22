@@ -1,4 +1,4 @@
-(ns jikan.main
+(ns jikan.core
   "Entry point for the Jikan MCP stdio server.  Loads elisp/jikan.el into
    the running Emacs daemon (so it has the current definitions, like the
    REPL's init!), then serves jikan.org-tools as MCP tools over stdio."

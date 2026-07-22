@@ -38,20 +38,20 @@
     (error-response id c/invalid-params (str "Unknown tool: " name))))
 
 (defn handle-message [{:keys [id method params]} registry server-info]
-  (case method
-    "initialize"
+  (condp = method
+    c/method-initialize
     (result-response id {:protocolVersion (or (:protocolVersion params)
                                               c/protocol-version)
                          :capabilities {:tools {}}
                          :serverInfo server-info})
 
-    "notifications/initialized"
+    c/method-initialized
     nil
 
-    "tools/list"
+    c/method-tools-list
     (result-response id {:tools (tool-schemas registry)})
 
-    "tools/call"
+    c/method-tools-call
     (call-tool id registry params)
 
     (when id

@@ -2,4 +2,4 @@
  :deps {org.clojure/data.json {:mvn/version "2.5.1"}}
  :aliases
  {:dev {:extra-paths ["dev"]}
-  :mcp {:main-opts ["-m" "jikan.main"]}}}
+  :mcp {:main-opts ["-m" "jikan.core"]}}}
